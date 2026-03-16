@@ -27,10 +27,10 @@
             <div class="hamburger" onclick="toggleMenu()"><i class="ri-menu-line" id="menu-icon"></i></div>
             <ul class="nav-menu" id="nav-menu">
                 <li><a href="javascript:void(0)" onclick="switchTab('sgpa'); closeMenu()" class="nav-link active"
-                        id="nav-sgpa">SGPA</a>
-                </li>
+                        id="nav-sgpa">SGPA</a></li>
                 <li><a href="javascript:void(0)" onclick="switchTab('cgpa'); closeMenu()" class="nav-link"
                         id="nav-cgpa">CGPA</a></li>
+                <li><a href="#features" onclick="closeMenu()" class="nav-link">Features</a></li>
                 <li><a href="#how-to" onclick="closeMenu()" class="nav-link">How to Use</a></li>
             </ul>
         </div>
@@ -220,48 +220,99 @@
         <div id="report-output" class="report-preview-wrapper"
             style="display: flex; justify-content: center; width: 100%;"></div>
 
-        <section id="how-to" class="info-section">
-            <div class="section-header">
-                <h2>Workflow</h2>
-                <p>Designed for local execution. No data leaves your device.</p>
+        <section id="features" class="info-section">
+            <div class="section-header text-center" style="text-align: center;">
+                <h2 class="gradient-text">Premium Features</h2>
+                <p>Engineered for precision, speed, and absolute privacy.</p>
             </div>
-            <div class="cards-grid">
-                <div class="feature-card">
-                    <div class="card-icon"><i class="ri-upload-cloud-line"></i></div>
-                    <h3>1. Upload</h3>
-                    <p>Securely upload your official semester result file. Don't have it? Download the template from the
-                        Drive link above.
-                    </p>
+            <div class="features-showcase-grid">
+                <div class="premium-card">
+                    <div class="premium-icon" style="color: #3b82f6; background: rgba(59, 130, 246, 0.1);"><i
+                            class="ri-lock-password-fill"></i></div>
+                    <h3>100% Local Processing</h3>
+                    <p>Your data never leaves your device. All calculations are done securely within your browser.</p>
                 </div>
-                <div class="feature-card">
-                    <div class="card-icon"><i class="ri-fingerprint-line"></i></div>
-                    <h3>2. Authenticate</h3>
-                    <p>Enter your unique Registration Number to fetch data.</p>
+                <div class="premium-card">
+                    <div class="premium-icon" style="color: #10b981; background: rgba(16, 185, 129, 0.1);"><i
+                            class="ri-bar-chart-box-fill"></i></div>
+                    <h3>Flawless Accuracy</h3>
+                    <p>Powered by the exact mathematical algorithms used in official university grading systems.</p>
                 </div>
-                <div class="feature-card">
-                    <div class="card-icon"><i class="ri-cpu-line"></i></div>
-                    <h3>3. Process</h3>
-                    <p>Algorithms instantly compute credit points and SGPA.</p>
+                <div class="premium-card">
+                    <div class="premium-icon" style="color: #a855f7; background: rgba(168, 85, 247, 0.1);"><i
+                            class="ri-file-download-fill"></i></div>
+                    <h3>HD Exports</h3>
+                    <p>Download your results instantly as high-resolution PDFs or Images for sharing and printing.</p>
                 </div>
-                <div class="feature-card">
-                    <div class="card-icon"><i class="ri-share-forward-box-line"></i></div>
-                    <h3>4. Export</h3>
-                    <p>Download a high-res PDF, Image, or share directly with details.</p>
+                <div class="premium-card">
+                    <div class="premium-icon" style="color: #22c55e; background: rgba(34, 197, 94, 0.1);"><i
+                            class="ri-whatsapp-fill"></i></div>
+                    <h3>Instant Sharing</h3>
+                    <p>Share your pristine grade sheet directly to your peers or family via WhatsApp with a single
+                        click.</p>
                 </div>
             </div>
         </section>
 
-        <footer class="main-footer">
-            <div class="footer-links">
-                <a href="https://github.com/JaganParida" target="_blank"><i class="ri-github-fill"></i> GitHub</a>
-                <a href="https://www.linkedin.com/in/jagan-parida04" target="_blank"><i class="ri-linkedin-fill"></i>
-                    LinkedIn</a>
+        <section id="how-to" class="info-section" style="margin-top: 60px;">
+            <div class="section-header text-center" style="text-align: center;">
+                <h2 class="gradient-text">How It Works</h2>
+                <p>Generate your grade sheet in four simple steps.</p>
             </div>
-            <p class="copyright">Developed with <i style="color: red;" class="ri-heart-fill"></i> by <strong
-                    style="color: #fff;">Jagan Parida</strong></p>
-            <p class="copyright" style="font-size: 11px; margin-top: 5px;">&copy; 2026 Academic Tools Suite.</p>
-        </footer>
+
+            <div class="animated-timeline-container">
+                <div class="timeline-step">
+                    <div class="step-number">1</div>
+                    <div class="workflow-card step-content">
+                        <div class="workflow-icon"><i class="ri-upload-cloud-2-line"></i></div>
+                        <h3>Upload File</h3>
+                        <p>Securely upload your official semester result excel file. Need the format? Use our Drive
+                            link.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-step">
+                    <div class="step-number">2</div>
+                    <div class="workflow-card step-content">
+                        <div class="workflow-icon"><i class="ri-fingerprint-line"></i></div>
+                        <h3>Authenticate</h3>
+                        <p>Enter your unique Registration Number to allow the algorithm to extract your specific data.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="timeline-step">
+                    <div class="step-number">3</div>
+                    <div class="workflow-card step-content">
+                        <div class="workflow-icon"><i class="ri-cpu-line"></i></div>
+                        <h3>Process</h3>
+                        <p>Our engine instantly maps your grades, calculates credit points, and computes your final
+                            SGPA.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-step">
+                    <div class="step-number">4</div>
+                    <div class="workflow-card step-content">
+                        <div class="workflow-icon"><i class="ri-share-forward-box-line"></i></div>
+                        <h3>Export & Share</h3>
+                        <p>Save a pristine copy to your device or share it directly to WhatsApp with a single click.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </div>
+    <footer class="main-footer">
+        <div class="footer-links">
+            <a href="https://github.com/JaganParida" target="_blank"><i class="ri-github-fill"></i> GitHub</a>
+            <a href="https://www.linkedin.com/in/jagan-parida04" target="_blank"><i class="ri-linkedin-fill"></i>
+                LinkedIn</a>
+        </div>
+        <p class="copyright">Developed with <i style="color: red;" class="ri-heart-fill"></i> by <strong
+                style="color: #fff;">Jagan Parida</strong></p>
+        <p class="copyright" style="font-size: 11px; margin-top: 5px;">&copy; 2026 Academic Tools Suite.</p>
+    </footer>
 
     <div id="formula-modal" class="modal-overlay">
         <div class="modal-content material-card popup-glass">

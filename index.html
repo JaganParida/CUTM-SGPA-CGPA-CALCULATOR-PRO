@@ -19,14 +19,18 @@
     <nav class="navbar" id="main-navbar">
         <div class="nav-content">
             <div class="logo-group">
-                <img src="Assets/cutm_text.jpg" alt="Logo" class="nav-logo" onerror="this.style.display='none'">
-                <div class="brand-name">CUTM <span class="brand-accent">Calc</span></div>
+                <div class="brand-name">
+                    <i class="ri-graduation-cap-fill" style="color: var(--text-muted); margin-right: 4px;"></i>
+                    Grade<span class="brand-accent">Flow</span>
+                </div>
             </div>
             <div class="hamburger" onclick="toggleMenu()"><i class="ri-menu-line" id="menu-icon"></i></div>
             <ul class="nav-menu" id="nav-menu">
-                <li><a href="#" onclick="switchTab('sgpa'); closeMenu()" class="nav-link active" id="nav-sgpa">SGPA</a>
+                <li><a href="javascript:void(0)" onclick="switchTab('sgpa'); closeMenu()" class="nav-link active"
+                        id="nav-sgpa">SGPA</a>
                 </li>
-                <li><a href="#" onclick="switchTab('cgpa'); closeMenu()" class="nav-link" id="nav-cgpa">CGPA</a></li>
+                <li><a href="javascript:void(0)" onclick="switchTab('cgpa'); closeMenu()" class="nav-link"
+                        id="nav-cgpa">CGPA</a></li>
                 <li><a href="#how-to" onclick="closeMenu()" class="nav-link">How to Use</a></li>
             </ul>
         </div>
@@ -42,7 +46,7 @@
             <div class="header-actions">
                 <button onclick="openModal()" class="glass-btn"><i class="ri-code-box-line"></i> View Algorithm</button>
                 <button onclick="openExcelModal()" class="glass-btn secondary-glass"><i class="ri-drive-line"></i> Drive
-                    Templates</button>
+                    of Excel</button>
             </div>
 
             <div class="grading-table-container material-card">
@@ -51,7 +55,7 @@
                         <tr>
                             <th>Grade</th>
                             <th>Score Range</th>
-                            <th>Credit Points</th>
+                            <th>Grade Points</th>
                             <th>Interpretation</th>
                         </tr>
                     </thead>
@@ -225,7 +229,9 @@
                 <div class="feature-card">
                     <div class="card-icon"><i class="ri-upload-cloud-line"></i></div>
                     <h3>1. Upload</h3>
-                    <p>Provide your official semester result file securely.</p>
+                    <p>Securely upload your official semester result file. Don't have it? Download the template from the
+                        Drive link above.
+                    </p>
                 </div>
                 <div class="feature-card">
                     <div class="card-icon"><i class="ri-fingerprint-line"></i></div>
@@ -235,12 +241,12 @@
                 <div class="feature-card">
                     <div class="card-icon"><i class="ri-cpu-line"></i></div>
                     <h3>3. Process</h3>
-                    <p>Algorithms instantly compute credit points and GPA.</p>
+                    <p>Algorithms instantly compute credit points and SGPA.</p>
                 </div>
                 <div class="feature-card">
                     <div class="card-icon"><i class="ri-share-forward-box-line"></i></div>
                     <h3>4. Export</h3>
-                    <p>Download a high-res PDF, Image, or share directly.</p>
+                    <p>Download a high-res PDF, Image, or share directly with details.</p>
                 </div>
             </div>
         </section>
@@ -251,7 +257,8 @@
                 <a href="https://www.linkedin.com/in/jagan-parida04" target="_blank"><i class="ri-linkedin-fill"></i>
                     LinkedIn</a>
             </div>
-            <p class="copyright">Designed & Developed by <strong style="color: #fff;">Jagan Parida</strong></p>
+            <p class="copyright">Developed with <i style="color: red;" class="ri-heart-fill"></i> by <strong
+                    style="color: #fff;">Jagan Parida</strong></p>
             <p class="copyright" style="font-size: 11px; margin-top: 5px;">&copy; 2026 Academic Tools Suite.</p>
         </footer>
     </div>

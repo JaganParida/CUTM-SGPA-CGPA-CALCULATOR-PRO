@@ -239,13 +239,33 @@ function closeMenu() {
     .getElementById("menu-icon")
     .classList.replace("ri-close-line", "ri-menu-line");
 }
+
+/* ================= UPDATED SWITCH TAB FUNCTION ================= */
 function switchTab(tabId) {
+  // 1. Hide both sections and reset tab buttons
   document.getElementById("sgpa-section").style.display = "none";
   document.getElementById("cgpa-section").style.display = "none";
   document.getElementById("tab-sgpa").classList.remove("active");
   document.getElementById("tab-cgpa").classList.remove("active");
+
+  // 2. Show the targeted section and activate its button
   document.getElementById(tabId + "-section").style.display = "block";
   document.getElementById("tab-" + tabId).classList.add("active");
+
+  // 3. Sync the Active class for the Navbar links
+  const navSgpa = document.getElementById("nav-sgpa");
+  const navCgpa = document.getElementById("nav-cgpa");
+  if (navSgpa) navSgpa.classList.remove("active");
+  if (navCgpa) navCgpa.classList.remove("active");
+
+  const activeNavLink = document.getElementById("nav-" + tabId);
+  if (activeNavLink) activeNavLink.classList.add("active");
+
+  // 4. Smooth scroll to the Tab section
+  const tabWrapper = document.querySelector(".tab-wrapper");
+  if (tabWrapper) {
+    tabWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 /* ================= EXCEL PARSING ================= */
@@ -327,10 +347,10 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
     return;
   }
 
-  let totalPoints = 0,
+  let totalWeightedPoints = 0,
     totalCredits = 0,
-    creditsCleared = 0,
-    sgpaCredits = 0;
+    creditsCleared = 0;
+
   const studentName = studentRows[0]["Name"] || "Unknown Student";
   let batch = regNo.length >= 2 ? "20" + regNo.substring(0, 2) : "N/A";
 
@@ -349,29 +369,30 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
       let points =
         validGradePoints[grade] !== undefined ? validGradePoints[grade] : 0;
 
-      // 1. Total credits strictly sums all displayed credits regardless of grade
+      // Logic: Total credits strictly sums all displayed credits regardless of grade
       totalCredits += credit;
 
-      // 2. Track backlogs exactly if F, S, or M
+      // Logic: Track backlogs if F, S, or M
       if (["F", "M", "S"].includes(grade)) {
         if (!actualBacklogs.includes(subject)) {
           actualBacklogs.push(subject);
         }
       }
 
-      // 3. Credits Cleared strictly ignores S and M (but adds F, A, B, C, D, E, O, R as requested)
-      if (grade !== "S" && grade !== "M") {
+      // Logic: Credits Cleared strictly ignores F, S, and M
+      if (!["F", "S", "M"].includes(grade)) {
         creditsCleared += credit;
-        sgpaCredits += credit;
-        totalPoints += points * credit;
       }
+
+      // Logic: SGPA Calculation (points * credit) / totalCredits
+      totalWeightedPoints += points * credit;
 
       return `<tr><td>${i + 1}</td><td>${row["Subject_Code"] || ""}</td><td>${subject}</td><td>${type}</td><td>${credit}</td><td>${grade}</td></tr>`;
     })
     .join("");
 
   const sgpa =
-    sgpaCredits > 0 ? (totalPoints / sgpaCredits).toFixed(2) : "0.00";
+    totalCredits > 0 ? (totalWeightedPoints / totalCredits).toFixed(2) : "0.00";
 
   currentReportData = {
     studentName,
@@ -401,7 +422,7 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
     minute: "2-digit",
   });
 
-  // SMART GLASSY BANNER LOGIC (Displayed OUTSIDE the grade sheet)
+  // SMART GLASSY BANNER LOGIC
   let bannerHTML = "";
   let hasBacklogs = actualBacklogs.length > 0;
   let isOutstanding = parseFloat(sgpa) > 9.0 && !hasBacklogs;
@@ -438,7 +459,6 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
       `;
   }
 
-  // Inject Banner, Centered scroll wrapper, and zoom UI (No backlog box inside sheet)
   reportDiv.innerHTML = `
         ${bannerHTML}
         
@@ -447,12 +467,11 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
                 <div id="grade-sheet" class="grade-sheet">
                     <div class="sheet-top-header">
                         <div>${timeString}</div>
-                        <div>iCloudEMS - We honor great education and great educationists</div>
+                        <div>GradeFlow - Streamlining your academic journey</div>
                     </div>
                     <div class="sheet-logos"><img src="Assets/cutm.png" alt="Logo" class="sheet-logo-img" onerror="this.src='Assets/cutm_text.jpg'"></div>
                     <div class="sheet-titles">
                         <h1>Centurion University of Technology and Management</h1>
-                        <h3>School of Engineering & Technology, Bhubaneswar</h3>
                         <h3>Jatni, Khurda, Odisha</h3>
                         <h2>Semester Grade Sheet</h2>
                     </div>
@@ -489,7 +508,6 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
 
   document.getElementById("download-actions").style.display = "flex";
 
-  // LOCK STATE
   semInput.disabled = true;
   document.getElementById("sem-lock-icon").style.display = "inline-block";
   document.getElementById("excel-file").disabled = true;
@@ -498,7 +516,8 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
 
   const calcBtn = document.getElementById("calculate-btn");
   calcBtn.disabled = true;
-  calcBtn.innerHTML = "Report Generated ✓";
+  calcBtn.innerHTML =
+    '<i class="ri-verified-badge-fill" style="color: #3b82f6;"></i> Report Generated';
   calcBtn.style.cursor = "not-allowed";
 
   isReportGenerated = true;
@@ -520,8 +539,6 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
     fitToScreen();
     initDragToScroll();
     reportDiv.scrollIntoView({ behavior: "smooth", block: "start" });
-
-    // FIRE PARTY BLAST IF SGPA > 9 AND NO BACKLOGS
     if (isOutstanding) {
       fireConfetti();
     }
@@ -592,6 +609,7 @@ function addCgpaRow() {
   div.innerHTML = `<div class="input-with-icon"><i class="ri-hashtag"></i><input type="number" class="cgpa-sgpa" placeholder="SGPA" step="0.01"></div><div class="input-with-icon"><i class="ri-coin-line"></i><input type="number" class="cgpa-credit" placeholder="Credits" step="0.5"></div>`;
   document.getElementById("cgpa-entries").appendChild(div);
 }
+
 function calculateCGPA() {
   const sgpas = document.querySelectorAll(".cgpa-sgpa");
   const credits = document.querySelectorAll(".cgpa-credit");

@@ -689,16 +689,84 @@ select:disabled {
   font-size: 1.2rem;
 }
 
+/* ========== STATUS BANNER CSS (Glass Outline) ========== */
+.report-status-banner {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 18px 24px;
+    border-radius: 16px;
+    margin: 0 auto 24px auto;
+    width: 100%;
+    max-width: 794px; /* Matches gradesheet max-width */
+    animation: slideDownFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    background: rgba(20, 20, 20, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+.banner-icon {
+    font-size: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.banner-content {
+    text-align: left;
+}
+.banner-content h4 {
+    margin: 0 0 6px 0;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+.banner-content p {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 400;
+    opacity: 0.9;
+    line-height: 1.5;
+}
+
+/* Specific Glowing Outline Variations */
+.status-clear {
+    border: 1px solid rgba(16, 185, 129, 0.5);
+    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.15), inset 0 0 20px rgba(16, 185, 129, 0.05);
+}
+.status-clear .banner-icon { color: #34d399; text-shadow: 0 0 15px rgba(52, 211, 153, 0.6); }
+.status-clear .banner-content h4 { color: #6ee7b7; }
+.status-clear .banner-content p { color: #d1fae5; }
+
+.status-warning {
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.15), inset 0 0 20px rgba(239, 68, 68, 0.05);
+}
+.status-warning .banner-icon { color: #f87171; text-shadow: 0 0 15px rgba(248, 113, 113, 0.6); }
+.status-warning .banner-content h4 { color: #fca5a5; }
+.status-warning .banner-content p { color: #fee2e2; }
+
+.status-outstanding {
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    box-shadow: 0 8px 32px rgba(245, 158, 11, 0.15), inset 0 0 20px rgba(245, 158, 11, 0.05);
+}
+.status-outstanding .banner-icon { color: #fbbf24; text-shadow: 0 0 15px rgba(251, 191, 36, 0.6); }
+.status-outstanding .banner-content h4 { color: #fcd34d; }
+.status-outstanding .banner-content p { color: #fef3c7; }
+
+@keyframes slideDownFade {
+    0% { opacity: 0; transform: translateY(-20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+
 /* ========== EXACT A4 GRADE SHEET & ZOOM WRAPPERS ========== */
 .report-preview-wrapper {
   width: 100%;
-  margin-bottom: 15px; /* Reduced to bring buttons closer */
+  margin-bottom: 15px;
   padding: 0;
   display: flex;
   flex-direction: column;
 }
 
-/* The scroll wrapper - using flex ensures scrolling works naturally */
 .report-scroll-wrapper {
   width: 100%;
   overflow: auto;
@@ -711,14 +779,11 @@ select:disabled {
   cursor: grabbing;
 }
 
-/* Fixes the "ghost gap" issue permanently */
 .grade-sheet-target {
-  margin: 0 auto; /* Keeps it perfectly centered */
+  margin: 0 auto; 
   position: relative;
   flex-shrink: 0;
-  transition:
-    width 0.1s ease-out,
-    height 0.1s ease-out;
+  transition: width 0.1s ease-out, height 0.1s ease-out;
 }
 
 .grade-sheet {
@@ -819,16 +884,6 @@ select:disabled {
 .grade-sheet .result-table td:nth-child(3),
 .grade-sheet .result-table th:nth-child(3) {
   text-align: left;
-}
-
-.feedback-box {
-  padding: 15px;
-  border-radius: 6px;
-  text-align: center;
-  margin-bottom: 30px;
-  font-size: 13px;
-  font-family: Arial, sans-serif;
-  border: 1px solid;
 }
 
 .summary-row {
@@ -992,6 +1047,10 @@ select:disabled {
   }
   .cards-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .report-status-banner {
+      flex-direction: column;
+      text-align: center;
   }
 }
 

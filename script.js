@@ -6,10 +6,11 @@ const validGradePoints = {
   C: 6,
   D: 5,
   R: 10,
-  F: 0,
+  F: 2,
   M: 0,
   S: 0,
 };
+
 let workbookData = [];
 let currentReportData = null;
 let isReportGenerated = false;
@@ -43,10 +44,10 @@ document.addEventListener(
 
 /* ================= CONFETTI LOGIC ================= */
 function fireConfetti() {
-  // Dynamically load the canvas-confetti library if it doesn't exist
   if (!window.confetti) {
     const script = document.createElement("script");
-    script.src = "https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js";
+    script.src =
+      "https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js";
     script.onload = () => doConfettiBlast();
     document.head.appendChild(script);
   } else {
@@ -59,27 +60,27 @@ function doConfettiBlast() {
   const end = Date.now() + duration;
 
   (function frame() {
-    // Blast from left edge
     confetti({
-      particleCount: 5,
+      particleCount: 6,
       angle: 60,
       spread: 55,
       origin: { x: 0, y: 1 },
-      colors: ['#407BFF', '#22c55e', '#ffcf40', '#ef4444', '#a855f7']
+      colors: ["#407BFF", "#22c55e", "#ffcf40", "#ef4444", "#a855f7"],
+      startVelocity: 45,
     });
-    // Blast from right edge
     confetti({
-      particleCount: 5,
+      particleCount: 6,
       angle: 120,
       spread: 55,
       origin: { x: 1, y: 1 },
-      colors: ['#407BFF', '#22c55e', '#ffcf40', '#ef4444', '#a855f7']
+      colors: ["#407BFF", "#22c55e", "#ffcf40", "#ef4444", "#a855f7"],
+      startVelocity: 45,
     });
 
     if (Date.now() < end) {
       requestAnimationFrame(frame);
     }
-  }());
+  })();
 }
 
 /* ================= NAVBAR SCROLL ================= */
@@ -137,7 +138,7 @@ function applySheetZoom() {
   const rawHeight = sheet.offsetHeight;
 
   sheet.style.transform = `scale(${currentZoomLevel})`;
-  
+
   container.style.width = `${794 * currentZoomLevel}px`;
   container.style.height = `${rawHeight * currentZoomLevel}px`;
 
@@ -157,8 +158,8 @@ function changeZoom(step) {
 function fitToScreen() {
   const wrapper = document.getElementById("report-scroll-wrapper");
   if (!wrapper) return;
-  const availableWidth = wrapper.clientWidth - 40; 
-  
+  const availableWidth = wrapper.clientWidth - 40;
+
   if (availableWidth > 0 && availableWidth < 794) {
     currentZoomLevel = availableWidth / 794;
   } else {
@@ -260,7 +261,15 @@ document.getElementById("excel-file").addEventListener("change", function (e) {
         const data = new Uint8Array(evt.target.result);
         const wb = XLSX.read(data, { type: "array" });
         const sheet = wb.Sheets[wb.SheetNames[0]];
-        workbookData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+        const rawData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        workbookData = rawData.map((row) => {
+          let newRow = {};
+          for (let key in row) {
+            newRow[key.trim()] = row[key];
+          }
+          return newRow;
+        });
       } catch (error) {
         console.error("Excel Parsing Error: ", error);
         customAlert(
@@ -320,10 +329,13 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
 
   let totalPoints = 0,
     totalCredits = 0,
-    creditsCleared = 0;
+    creditsCleared = 0,
+    sgpaCredits = 0;
   const studentName = studentRows[0]["Name"] || "Unknown Student";
   let batch = regNo.length >= 2 ? "20" + regNo.substring(0, 2) : "N/A";
+
   let subjectsArray = [];
+  let actualBacklogs = [];
 
   const rowsHTML = studentRows
     .map((row, i) => {
@@ -331,27 +343,35 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
       const credit = parseCredit(row["Credits"]);
       const subject = row["Subject_Name"] || "Unknown";
       const type = row["Type"] || "PP";
+
       subjectsArray.push({ name: subject, grade: grade });
+
       let points =
         validGradePoints[grade] !== undefined ? validGradePoints[grade] : 0;
-      if (grade !== "S") {
-        totalPoints += points * credit;
-        totalCredits += credit;
-        if (!["F", "M"].includes(grade)) creditsCleared += credit;
-      } else {
-        creditsCleared += credit;
+
+      // 1. Total credits strictly sums all displayed credits regardless of grade
+      totalCredits += credit;
+
+      // 2. Track backlogs exactly if F, S, or M
+      if (["F", "M", "S"].includes(grade)) {
+        if (!actualBacklogs.includes(subject)) {
+          actualBacklogs.push(subject);
+        }
       }
+
+      // 3. Credits Cleared strictly ignores S and M (but adds F, A, B, C, D, E, O, R as requested)
+      if (grade !== "S" && grade !== "M") {
+        creditsCleared += credit;
+        sgpaCredits += credit;
+        totalPoints += points * credit;
+      }
+
       return `<tr><td>${i + 1}</td><td>${row["Subject_Code"] || ""}</td><td>${subject}</td><td>${type}</td><td>${credit}</td><td>${grade}</td></tr>`;
     })
     .join("");
 
   const sgpa =
-    totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : "0.00";
-  const actualBacklogs = studentRows
-    .filter((row) =>
-      ["F", "M"].includes(String(row["Grade"]).trim().toUpperCase()),
-    )
-    .map((r) => r["Subject_Name"]);
+    sgpaCredits > 0 ? (totalPoints / sgpaCredits).toFixed(2) : "0.00";
 
   currentReportData = {
     studentName,
@@ -364,11 +384,6 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
     backlogs: actualBacklogs,
     subjects: subjectsArray,
   };
-
-  const feedback =
-    actualBacklogs.length > 0
-      ? `<div class="feedback-box" style="border-color:#ef4444; background:#fef2f2; color:#b91c1c;"><strong>Backlogs:</strong> ${actualBacklogs.join(", ")}</div>`
-      : ``;
 
   const currentDate = new Date();
   const dateString = currentDate
@@ -386,44 +401,44 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
     minute: "2-digit",
   });
 
-  // Decide what banner to show
+  // SMART GLASSY BANNER LOGIC (Displayed OUTSIDE the grade sheet)
   let bannerHTML = "";
-  let isOutstanding = parseFloat(sgpa) > 9.0;
-  
+  let hasBacklogs = actualBacklogs.length > 0;
+  let isOutstanding = parseFloat(sgpa) > 9.0 && !hasBacklogs;
+
   if (isOutstanding) {
-      bannerHTML = `
+    bannerHTML = `
         <div class="report-status-banner status-outstanding">
-            <div class="banner-icon"><i class="ri-medal-fill"></i></div>
+            <div class="banner-icon"><img src="https://cdn-icons-png.flaticon.com/512/3176/3176294.png" style="width: 36px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));" alt="Medal"></div>
             <div class="banner-content">
-                <h4>Outstanding Performance!</h4>
+                <h4>Outstanding Performance! 🏆</h4>
                 <p>Incredible job! You achieved a stellar SGPA of ${sgpa}. Keep up the excellent work!</p>
             </div>
         </div>
       `;
-  } else if (actualBacklogs.length > 0) {
-      bannerHTML = `
+  } else if (hasBacklogs) {
+    bannerHTML = `
         <div class="report-status-banner status-warning">
             <div class="banner-icon"><i class="ri-error-warning-fill"></i></div>
             <div class="banner-content">
-                <h4>Attention Required</h4>
-                <p>You have active backlogs in this semester. Review the detailed subjects below.</p>
+                <h4>Action Required: Pending Subjects</h4>
+                <p>You have pending backlogs (${actualBacklogs.join(", ")}). Please prepare well and clear them in upcoming exams.</p>
             </div>
         </div>
       `;
   } else {
-      bannerHTML = `
-        <div class="report-status-banner status-normal">
-            <div class="banner-icon"><i class="ri-checkbox-circle-fill"></i></div>
+    bannerHTML = `
+        <div class="report-status-banner status-clear">
+            <div class="banner-icon"><i class="ri-verified-badge-fill"></i></div>
             <div class="banner-content">
-                <h4>Report Generated</h4>
-                <p>All clear! Your semester results have been successfully processed.</p>
+                <h4>All Clear! 🎉</h4>
+                <p>Congratulations! You have successfully cleared all subjects for this semester.</p>
             </div>
         </div>
       `;
   }
 
-  // Inject Banner, Centered scroll wrapper, and zoom UI
-  // Note: CGPA removed from summary row
+  // Inject Banner, Centered scroll wrapper, and zoom UI (No backlog box inside sheet)
   reportDiv.innerHTML = `
         ${bannerHTML}
         
@@ -451,8 +466,7 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
                         <thead><tr><th>SL.NO</th><th>SUB.CODE</th><th>SUBJECT</th><th>TYPE</th><th>CREDIT</th><th>GRADE</th></tr></thead>
                         <tbody>${rowsHTML}</tbody>
                     </table>
-                    ${feedback}
-                    <div class="summary-row">
+                    <div class="summary-row" style="margin-top: 80px;">
                         <div>Total Credits : ${totalCredits}</div>
                         <div>Credits Cleared : ${creditsCleared}</div>
                         <div>SGPA : ${sgpa}</div>
@@ -506,10 +520,10 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
     fitToScreen();
     initDragToScroll();
     reportDiv.scrollIntoView({ behavior: "smooth", block: "start" });
-    
-    // FIRE PARTY BLAST IF SGPA > 9
+
+    // FIRE PARTY BLAST IF SGPA > 9 AND NO BACKLOGS
     if (isOutstanding) {
-        fireConfetti();
+      fireConfetti();
     }
   }, 50);
 });
@@ -619,8 +633,9 @@ function calculateCGPA() {
     2,
   );
 }
+
 function parseCredit(val) {
-  if (!val) return 0;
+  if (!val && val !== 0) return 0;
   return val
     .toString()
     .split("+")

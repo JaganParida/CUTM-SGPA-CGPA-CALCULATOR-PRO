@@ -272,7 +272,7 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
                     <div>${timeString}</div>
                     <div>iCloudEMS - We honor great education and great educationists</div>
                 </div>
-                <div class="sheet-logos"><img src="cutm.png" alt="Logo" class="sheet-logo-img" onerror="this.src='cutm_text.jpg'"></div>
+                <div class="sheet-logos"><img src="Assets/cutm.png" alt="Logo" class="sheet-logo-img" onerror="this.src='Assets/cutm_text.jpg'"></div>
                 <div class="sheet-titles">
                     <h1>Centurion University of Technology and Management</h1>
                     <h3>School of Engineering & Technology, Bhubaneswar</h3>

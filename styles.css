@@ -15,6 +15,7 @@
 }
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 body {
   margin: 0;
@@ -115,6 +116,7 @@ body {
   margin: 0 auto;
   padding: 40px 20px;
   min-height: calc(100vh - 200px);
+  width: 100%;
   overflow-x: hidden;
 }
 .hero-section {
@@ -199,10 +201,10 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  text-decoration: none; /* <-- Add this line to remove the underline */
+  text-decoration: none;
 }
 
-.primary-btn a{
+.primary-btn a {
   text-decoration: none;
 }
 .primary-btn:hover:not(:disabled) {
@@ -559,6 +561,11 @@ select:disabled {
   color: white;
   line-height: 1;
 }
+#calculate-btn:disabled {
+  cursor: not-allowed !important;
+  pointer-events: auto !important;
+  opacity: 0.6;
+}
 
 /* MODALS */
 .modal-overlay {
@@ -682,26 +689,54 @@ select:disabled {
   font-size: 1.2rem;
 }
 
-/* ========== EXACT A4 GRADE SHEET ========== */
+/* ========== EXACT A4 GRADE SHEET & ZOOM WRAPPERS ========== */
 .report-preview-wrapper {
   width: 100%;
-  margin-bottom: 60px;
+  margin-bottom: 15px; /* Reduced to bring buttons closer */
   padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-/* The true A4 document - Locked width and sizes, scalable via JS */
+/* The scroll wrapper - using flex ensures scrolling works naturally */
+.report-scroll-wrapper {
+  width: 100%;
+  overflow: auto;
+  display: flex;
+  padding: 10px 0;
+  cursor: grab;
+  -webkit-overflow-scrolling: touch;
+}
+.report-scroll-wrapper:active {
+  cursor: grabbing;
+}
+
+/* Fixes the "ghost gap" issue permanently */
+.grade-sheet-target {
+  margin: 0 auto; /* Keeps it perfectly centered */
+  position: relative;
+  flex-shrink: 0;
+  transition:
+    width 0.1s ease-out,
+    height 0.1s ease-out;
+}
+
 .grade-sheet {
   background: white;
-  width: 794px; /* Locked standard A4 width */
-  min-width: 794px;
+  width: 794px;
   height: auto;
-  padding: 50px 45px; /* Clean padding like Image 3 */
+  padding: 50px 45px;
   color: #222;
   font-family: Arial, Helvetica, sans-serif;
   box-sizing: border-box;
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+
+  /* CRITICAL: Absolute position prevents unscaled version from stretching layout */
+  position: absolute;
+  top: 0;
+  left: 0;
   margin: 0;
-  transform-origin: top left; /* JS handles the scale */
+  transform-origin: top left;
 }
 
 /* Base fonts exactly like Image 3 */
@@ -811,6 +846,49 @@ select:disabled {
   font-size: 13px;
   font-weight: 700;
   color: #253b80;
+}
+
+/* ========== INLINE ZOOM CONTROLS (Pill-shaped below the sheet) ========== */
+.inline-zoom-controls {
+  background: #f1f3f5;
+  border-radius: 50px;
+  display: inline-flex;
+  align-items: center;
+  gap: 20px;
+  padding: 10px 24px;
+  margin: 10px auto 40px auto;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.inline-zoom-controls button {
+  background: #407bff;
+  color: white;
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(64, 123, 255, 0.3);
+  transition: all 0.2s;
+}
+
+.inline-zoom-controls button:hover {
+  transform: scale(1.05);
+  background: #3065e8;
+}
+
+.inline-zoom-controls span {
+  font-weight: 900;
+  font-size: 20px;
+  color: #111;
+  min-width: 60px;
+  text-align: center;
 }
 
 /* ========== RESPONSIVE WORKFLOW CARDS ========== */

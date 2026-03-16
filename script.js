@@ -13,9 +13,33 @@ const validGradePoints = {
 let workbookData = [];
 let currentReportData = null;
 let isReportGenerated = false;
+let currentZoomLevel = 1.0;
 
-// Keep your Google Apps Script URL
-const GOOGLE_SCRIPT_URL = ENV.GOOGLE_SCRIPT_URL;
+// Safely check if ENV is defined
+const GOOGLE_SCRIPT_URL =
+  typeof ENV !== "undefined" ? ENV.GOOGLE_SCRIPT_URL : "";
+
+/* ================= PREVENT BROWSER ZOOM (KEYBOARD & MOUSE) ================= */
+document.addEventListener(
+  "wheel",
+  function (e) {
+    if (e.ctrlKey) e.preventDefault();
+  },
+  { passive: false },
+);
+
+document.addEventListener(
+  "keydown",
+  function (e) {
+    if (
+      e.ctrlKey &&
+      (e.key === "+" || e.key === "-" || e.key === "0" || e.key === "=")
+    ) {
+      e.preventDefault();
+    }
+  },
+  { passive: false },
+);
 
 /* ================= NAVBAR SCROLL ================= */
 window.addEventListener("scroll", () => {
@@ -50,9 +74,11 @@ function resetUI() {
   const calcBtn = document.getElementById("calculate-btn");
   calcBtn.disabled = false;
   calcBtn.innerHTML = "Generate Report";
+  calcBtn.style.cursor = "pointer";
 
   isReportGenerated = false;
   currentReportData = null;
+  currentZoomLevel = 1.0;
 
   document
     .querySelectorAll(".error-msg")
@@ -61,31 +87,86 @@ function resetUI() {
 
 window.addEventListener("load", resetUI);
 
-/* ================= PERFECT A4 SCALE LOGIC ================= */
-function adjustSheetScale() {
+/* ================= CUSTOM ZOOM & PAN LOGIC ================= */
+function applySheetZoom() {
   const sheet = document.getElementById("grade-sheet");
   const container = document.getElementById("grade-sheet-target");
-  const wrapper = document.getElementById("report-output");
-  if (!sheet || !container || !wrapper) return;
+  if (!sheet || !container) return;
 
-  // Reset to natural state
-  sheet.style.transform = "none";
-  container.style.width = "794px";
-  container.style.height = "auto";
+  // Grab the natural height before it gets manipulated by scale
+  const rawHeight = sheet.offsetHeight;
 
-  // Calculate if mobile screen is smaller than A4
-  const wrapperWidth = wrapper.clientWidth - 20; // 10px buffer left and right
-  if (wrapperWidth > 0 && wrapperWidth < 794) {
-    const scale = wrapperWidth / 794;
-    sheet.style.transform = `scale(${scale})`;
-    sheet.style.transformOrigin = `top left`;
+  sheet.style.transform = `scale(${currentZoomLevel})`;
 
-    // Resize the container exactingly to avoid phantom blank spaces
-    container.style.width = `${794 * scale}px`;
-    container.style.height = `${sheet.offsetHeight * scale}px`;
+  // Explicitly resize the wrapper so it doesn't leave ghost gaps
+  container.style.width = `${794 * currentZoomLevel}px`;
+  container.style.height = `${rawHeight * currentZoomLevel}px`;
+
+  const zoomLabel = document.getElementById("zoom-level-label");
+  if (zoomLabel) {
+    zoomLabel.innerText = Math.round(currentZoomLevel * 100) + "%";
   }
 }
-window.addEventListener("resize", adjustSheetScale);
+
+function changeZoom(step) {
+  currentZoomLevel += step;
+  if (currentZoomLevel < 0.2) currentZoomLevel = 0.2;
+  if (currentZoomLevel > 3.0) currentZoomLevel = 3.0;
+  applySheetZoom();
+}
+
+// Auto scale down for mobile devices on initial render
+function fitToScreen() {
+  const wrapper = document.getElementById("report-scroll-wrapper");
+  if (!wrapper) return;
+  const availableWidth = wrapper.clientWidth - 40; // 40px padding buffer
+
+  // Calculate if mobile screen is smaller than A4
+  if (availableWidth > 0 && availableWidth < 794) {
+    currentZoomLevel = availableWidth / 794;
+  } else {
+    currentZoomLevel = 1.0;
+  }
+  applySheetZoom();
+}
+
+window.addEventListener("resize", fitToScreen);
+
+// Drag to pan map logic
+function initDragToScroll() {
+  const slider = document.getElementById("report-scroll-wrapper");
+  if (!slider) return;
+
+  let isDown = false;
+  let startX, startY, scrollLeft, scrollTop;
+
+  slider.addEventListener("mousedown", (e) => {
+    isDown = true;
+    slider.style.cursor = "grabbing";
+    startX = e.pageX - slider.offsetLeft;
+    startY = e.pageY - slider.offsetTop;
+    scrollLeft = slider.scrollLeft;
+    scrollTop = slider.scrollTop;
+  });
+  slider.addEventListener("mouseleave", () => {
+    isDown = false;
+    slider.style.cursor = "grab";
+  });
+  slider.addEventListener("mouseup", () => {
+    isDown = false;
+    slider.style.cursor = "grab";
+  });
+  slider.addEventListener("mousemove", (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - slider.offsetLeft;
+    const y = e.pageY - slider.offsetTop;
+    const walkX = (x - startX) * 1.5;
+    const walkY = (y - startY) * 1.5;
+    slider.scrollLeft = scrollLeft - walkX;
+    slider.scrollTop = scrollTop - walkY;
+  });
+}
 
 /* ================= POPUPS & MENUS ================= */
 function customAlert(msg) {
@@ -107,7 +188,6 @@ function openExcelModal() {
 function closeExcelModal() {
   document.getElementById("excel-modal").classList.remove("open");
 }
-
 function toggleMenu() {
   const nav = document.getElementById("nav-menu");
   const icon = document.getElementById("menu-icon");
@@ -122,7 +202,6 @@ function closeMenu() {
     .getElementById("menu-icon")
     .classList.replace("ri-close-line", "ri-menu-line");
 }
-
 function switchTab(tabId) {
   document.getElementById("sgpa-section").style.display = "none";
   document.getElementById("cgpa-section").style.display = "none";
@@ -141,10 +220,17 @@ document.getElementById("excel-file").addEventListener("change", function (e) {
   if (e.target.files[0]) {
     const reader = new FileReader();
     reader.onload = (evt) => {
-      const data = new Uint8Array(evt.target.result);
-      const wb = XLSX.read(data, { type: "array" });
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      workbookData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const wb = XLSX.read(data, { type: "array" });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        workbookData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+      } catch (error) {
+        console.error("Excel Parsing Error: ", error);
+        customAlert(
+          "Failed to read the Excel file. Please ensure it's a valid .xlsx file.",
+        );
+      }
     };
     reader.readAsArrayBuffer(e.target.files[0]);
   }
@@ -155,6 +241,7 @@ document.getElementById("regno-input").addEventListener("input", function (e) {
     const btn = document.getElementById("calculate-btn");
     btn.disabled = false;
     btn.innerHTML = "Generate Report";
+    btn.style.cursor = "pointer";
   }
 });
 
@@ -242,7 +329,6 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
     subjects: subjectsArray,
   };
 
-  // Only show backlogs notice if any, else keep it ultra-clean like image 3
   const feedback =
     actualBacklogs.length > 0
       ? `<div class="feedback-box" style="border-color:#ef4444; background:#fef2f2; color:#b91c1c;"><strong>Backlogs:</strong> ${actualBacklogs.join(", ")}</div>`
@@ -264,42 +350,52 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
     minute: "2-digit",
   });
 
-  // EXACT REPRODUCTION OF IMAGE 3 LAYOUT
+  // Inject properly centered scroll wrapper AND new zoom UI directly below
   reportDiv.innerHTML = `
-        <div id="grade-sheet-target" style="position: relative;">
-            <div id="grade-sheet" class="grade-sheet">
-                <div class="sheet-top-header">
-                    <div>${timeString}</div>
-                    <div>iCloudEMS - We honor great education and great educationists</div>
+        <div id="report-scroll-wrapper" class="report-scroll-wrapper">
+            <div id="grade-sheet-target" class="grade-sheet-target">
+                <div id="grade-sheet" class="grade-sheet">
+                    <div class="sheet-top-header">
+                        <div>${timeString}</div>
+                        <div>iCloudEMS - We honor great education and great educationists</div>
+                    </div>
+                    <div class="sheet-logos"><img src="Assets/cutm.png" alt="Logo" class="sheet-logo-img" onerror="this.src='Assets/cutm_text.jpg'"></div>
+                    <div class="sheet-titles">
+                        <h1>Centurion University of Technology and Management</h1>
+                        <h3>School of Engineering & Technology, Bhubaneswar</h3>
+                        <h3>Jatni, Khurda, Odisha</h3>
+                        <h2>Semester Grade Sheet</h2>
+                    </div>
+                    <div class="student-info-grid">
+                        <div class="info-row"><span class="lbl">Student Regd. No</span> <span class="val">: ${regNo}</span></div>
+                        <div class="info-row"><span class="lbl">Student Name</span> <span class="val">: ${studentName.toUpperCase()}</span></div>
+                        <div class="info-row"><span class="lbl">Batch</span> <span class="val">: ${batch}</span></div>
+                        <div class="info-row"><span class="lbl">Semester</span> <span class="val">: Sem ${sem}</span></div>
+                    </div>
+                    <table class="result-table">
+                        <thead><tr><th>SL.NO</th><th>SUB.CODE</th><th>SUBJECT</th><th>TYPE</th><th>CREDIT</th><th>GRADE</th></tr></thead>
+                        <tbody>${rowsHTML}</tbody>
+                    </table>
+                    ${feedback}
+                    <div class="summary-row">
+                        <div>Total Credits : ${totalCredits}</div>
+                        <div>Credits Cleared : ${creditsCleared}</div>
+                        <div>SGPA : ${sgpa}</div>
+                        <div>CGPA : N/A</div>
+                    </div>
+                    <div class="signature-row">
+                        <div>Date : ${dateString}</div>
+                        <div>Dean, Examinations</div>
+                    </div>
                 </div>
-                <div class="sheet-logos"><img src="Assets/cutm.png" alt="Logo" class="sheet-logo-img" onerror="this.src='Assets/cutm_text.jpg'"></div>
-                <div class="sheet-titles">
-                    <h1>Centurion University of Technology and Management</h1>
-                    <h3>School of Engineering & Technology, Bhubaneswar</h3>
-                    <h3>Jatni, Khurda, Odisha</h3>
-                    <h2>Semester Grade Sheet</h2>
-                </div>
-                <div class="student-info-grid">
-                    <div class="info-row"><span class="lbl">Student Regd. No</span> <span class="val">: ${regNo}</span></div>
-                    <div class="info-row"><span class="lbl">Student Name</span> <span class="val">: ${studentName.toUpperCase()}</span></div>
-                    <div class="info-row"><span class="lbl">Batch</span> <span class="val">: ${batch}</span></div>
-                    <div class="info-row"><span class="lbl">Semester</span> <span class="val">: Sem ${sem}</span></div>
-                </div>
-                <table class="result-table">
-                    <thead><tr><th>SL.NO</th><th>SUB.CODE</th><th>SUBJECT</th><th>TYPE</th><th>CREDIT</th><th>GRADE</th></tr></thead>
-                    <tbody>${rowsHTML}</tbody>
-                </table>
-                ${feedback}
-                <div class="summary-row">
-                    <div>Total Credits : ${totalCredits}</div>
-                    <div>Credits Cleared : ${creditsCleared}</div>
-                    <div>SGPA : ${sgpa}</div>
-                    <div>CGPA : N/A</div>
-                </div>
-                <div class="signature-row">
-                    <div>Date : ${dateString}</div>
-                    <div>Dean, Examinations</div>
-                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; width: 100%;">
+            <div class="inline-zoom-controls">
+                <button onclick="changeZoom(-0.1)">-</button>
+                <span id="zoom-level-label">100%</span>
+                <button onclick="changeZoom(0.1)">+</button>
             </div>
         </div>`;
 
@@ -315,10 +411,11 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
   const calcBtn = document.getElementById("calculate-btn");
   calcBtn.disabled = true;
   calcBtn.innerHTML = "Report Generated ✓";
+  calcBtn.style.cursor = "not-allowed";
+
   isReportGenerated = true;
 
-  // GOOGLE SHEETS LOGGING
-  if (GOOGLE_SCRIPT_URL !== ENV.GOOGLE_SCRIPT_URL) {
+  if (GOOGLE_SCRIPT_URL) {
     const formData = new FormData();
     formData.append("date", dateString);
     formData.append("time", timeString);
@@ -331,10 +428,10 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
     }).catch((e) => console.log("Log error"));
   }
 
-  // Auto trigger the scale down after rendering so it fits the mobile view instantly
   setTimeout(() => {
-    adjustSheetScale();
-    reportDiv.scrollIntoView({ behavior: "smooth" });
+    fitToScreen();
+    initDragToScroll();
+    reportDiv.scrollIntoView({ behavior: "smooth", block: "start" });
   }, 50);
 });
 
@@ -454,11 +551,7 @@ function parseCredit(val) {
 /* ================= PERFECT PDF/IMAGE EXPORTS ================= */
 document.getElementById("download-btn").addEventListener("click", () => {
   const sheet = document.getElementById("grade-sheet");
-
-  // Temporarily reset scale to extract Full High-Res Desktop Render
-  const currentTransform = sheet.style.transform;
   sheet.style.transform = "none";
-
   html2canvas(sheet, { scale: 2 }).then((canvas) => {
     const pdf = new window.jspdf.jsPDF("p", "mm", "a4");
     const imgWidth = 210;
@@ -472,26 +565,18 @@ document.getElementById("download-btn").addEventListener("click", () => {
       imgHeight,
     );
     pdf.save("GradeSheet.pdf");
-
-    // Restore mobile scale UI immediately after snapping photo
-    adjustSheetScale();
+    applySheetZoom();
   });
 });
 
 document.getElementById("download-photo-btn").addEventListener("click", () => {
   const sheet = document.getElementById("grade-sheet");
-
-  // Temporarily reset scale to extract Full High-Res Desktop Render
-  const currentTransform = sheet.style.transform;
   sheet.style.transform = "none";
-
   html2canvas(sheet, { scale: 3 }).then((canvas) => {
     const a = document.createElement("a");
     a.download = "GradeSheet.jpg";
     a.href = canvas.toDataURL("image/jpeg");
     a.click();
-
-    // Restore mobile scale UI immediately after snapping photo
-    adjustSheetScale();
+    applySheetZoom();
   });
 });

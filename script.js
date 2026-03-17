@@ -425,7 +425,7 @@ document.getElementById("calculate-btn").addEventListener("click", function () {
   // SMART GLASSY BANNER LOGIC
   let bannerHTML = "";
   let hasBacklogs = actualBacklogs.length > 0;
-  let isOutstanding = parseFloat(sgpa) > 9.0 && !hasBacklogs;
+  let isOutstanding = parseFloat(sgpa) >= 9.0 && !hasBacklogs;
 
   if (isOutstanding) {
     bannerHTML = `
